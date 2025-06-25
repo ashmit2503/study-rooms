@@ -1,0 +1,192 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="home-header">
+    <h1>Welcome to StudyRooms</h1>
+    <p>Connect with fellow learners and join study rooms on topics you're passionate about!</p>
+</div>
+
+<div class="home-container">
+    <div class="topics-sidebar">
+        <h3>Browse Topics</h3>
+        <a href="{% url 'home' %}" class="topic-link {% if not request.GET.q %}active{% endif %}">
+            All Topics
+            <span class="topic-count">{{ room_count }}</span>
+        </a>
+        
+        {% for topic in topics %}
+        <a href="{% url 'home' %}?q={{ topic.name }}" class="topic-link">
+            {{ topic.name }}
+            <span class="topic-count">{{ topic.room_count }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    
+    <div class="rooms-section">
+        <div class="rooms-header">
+            <h5>{{ room_count }} room{{ room_count|pluralize }} available</h5>
+            <a href="{% url 'create-room' %}" class="create-room-btn">+ Create Room</a>
+        </div>
+        
+        <div class="rooms-grid">
+            {% for room in rooms %}
+            <div class="room-card">
+                <div class="room-header">
+                    <div>
+                        <span class="room-host">@{{ room.host.username }}</span>
+                        {% if room.topic %}
+                            <span class="room-topic">{{ room.topic.name }}</span>
+                        {% endif %}
+                    </div>
+                    {% if request.user == room.host %}
+                    <div class="room-actions">
+                        <a href="{% url 'update-room' pk=room.id %}" class="btn-edit">Edit</a>
+                        <a href="{% url 'delete-room' pk=room.id %}" class="btn-delete">Delete</a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <h3 class="room-title">
+                    <a href="{% url 'room' pk=room.id %}">{{ room.name }}</a>
+                </h3>
+                
+                {% if room.description %}
+                <p class="room-description">{{ room.description|truncatechars:100 }}</p>
+                {% endif %}
+                
+                <div class="room-meta">
+                    <small>Created {{ room.created|timesince }} ago</small>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-rooms">
+                <h3>No rooms found</h3>
+                <p>Be the first to create a room on this topic!</p>
+                <a href="{% url 'create-room' %}" class="create-room-btn">Create First Room</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="activity-sidebar">
+        <h3>Recent Activity</h3>
+        <div class="recent-messages">
+            {% for message in room_messages %}
+            <div class="activity-item">
+                <small class="activity-user">{{ message.user.username }}</small>
+                <p class="activity-text">{{ message.body|truncatechars:50 }}</p>
+                <small class="activity-room">
+                    in <a href="{% url 'room' message.room.id %}">{{ message.room.name }}</a>
+                </small>
+                <small class="activity-time">{{ message.created|timesince }} ago</small>
+            </div>
+            {% empty %}
+            <div class="no-activity">
+                <p>No recent activity</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Override styles for home page specific elements */
+.home-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.home-header h1 {
+    color: var(--accent-primary);
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.home-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.rooms-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.room-description {
+    color: var(--text-secondary);
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.room-meta {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.room-meta small {
+    color: var(--text-muted);
+}
+
+.no-rooms {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.no-rooms h3 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.topic-link.active {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.topic-count {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    margin-left: auto;
+    min-width: 20px;
+    text-align: center;
+}
+
+.topic-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.topic-link:hover .topic-count {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.topic-link.active .topic-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+@media (max-width: 1024px) {
+    .home-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .topics-sidebar, .activity-sidebar {
+        order: 2;
+    }
+    
+    .rooms-section {
+        order: 1;
+    }
+}
+</style>
+{% endblock content %}

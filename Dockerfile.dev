@@ -1,0 +1,23 @@
+# Development Dockerfile for StudyRooms application
+FROM python:3.10-slim
+
+# Prevent Python from writing pyc files and buffer stdout/stderr
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Install pip and Poetry
+RUN pip install --upgrade pip poetry
+
+WORKDIR /app
+
+# Copy full project into container
+COPY pyproject.toml poetry.lock* /app/
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi --no-root
+
+# Copy rest of the application code
+COPY . /app/
+
+# Expose port and run development server
+EXPOSE 8000
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

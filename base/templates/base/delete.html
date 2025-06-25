@@ -1,0 +1,24 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="form-container">
+    <h2 style="color: var(--error);">Delete Confirmation</h2>
+    <div style="text-align: center; padding: 2rem; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: var(--border-radius-lg); margin-bottom: 2rem;">
+        <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1rem;">Are you sure you want to delete:</p>
+        <p style="font-size: 1.3rem; font-weight: 600; color: var(--text-primary);">"{{ obj }}"</p>
+        <p style="color: var(--error); font-weight: 500; margin-top: 1rem;">⚠️ This action cannot be undone!</p>
+    </div>
+    
+    <form action="" method="POST">
+        {% csrf_token %}
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="{{ request.META.HTTP_REFERER }}" 
+               style="background: var(--bg-tertiary); color: var(--text-primary); padding: 0.8rem 2rem; border: 1px solid var(--border-primary); border-radius: var(--border-radius); text-decoration: none; font-weight: 500; transition: var(--transition);">
+                Cancel
+            </a>
+            <input type="submit" value="Yes, Delete" 
+                   style="background: var(--error); color: white; padding: 0.8rem 2rem; border: none; border-radius: var(--border-radius); font-weight: 500; cursor: pointer; transition: var(--transition);" />
+        </div>
+    </form>
+</div>
+{% endblock content %}

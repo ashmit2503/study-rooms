@@ -1,0 +1,36 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Join StudyRooms</h2>
+    <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem;">Create your account and start learning with others!</p>
+    
+    <form action="{% url 'register' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small style="color: var(--text-muted); font-size: 0.8rem;">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}
+                    <div class="form-errors">
+                        {% for error in field.errors %}
+                            <small style="color: var(--error); font-size: 0.8rem;">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <input type="submit" value="Create Account" class="btn-submit" />
+    </form>
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <p style="color: var(--text-secondary);">Already have an account?</p>
+        <a href="{% url 'login' %}" style="color: var(--accent-primary); text-decoration: none; font-weight: 500;">Sign in →</a>
+    </div>
+</div>
+{% endblock content %}

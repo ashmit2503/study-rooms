@@ -1,0 +1,161 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-pic-container">
+            <div class="default-profile-pic">
+                {{ profile_user.first_name.0|default:profile_user.username.0|upper }}{% if profile_user.last_name %}{{ profile_user.last_name.0|upper }}{% endif %}
+            </div>
+        </div>
+        
+        <div class="profile-info">
+            <h1>{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+            <div class="username">@{{ profile_user.username }}</div>
+            
+            <div class="profile-details">
+                {% if profile_user.first_name %}
+                    <div class="detail-item">
+                        <strong>First Name:</strong> {{ profile_user.first_name }}
+                    </div>
+                {% endif %}
+                
+                {% if profile_user.last_name %}
+                    <div class="detail-item">
+                        <strong>Last Name:</strong> {{ profile_user.last_name }}
+                    </div>
+                {% endif %}
+                
+                {% if profile_user.email %}
+                    <div class="detail-item">
+                        <strong>Email:</strong> 📧 {{ profile_user.email }}
+                    </div>
+                {% endif %}
+                
+                {% if profile.bio %}
+                    <div class="detail-item">
+                        <strong>Bio:</strong> {{ profile.bio }}
+                    </div>
+                {% endif %}
+                
+                {% if profile.location %}
+                    <div class="detail-item">
+                        <strong>Location:</strong> 📍 {{ profile.location }}
+                    </div>
+                {% endif %}
+                
+                {% if profile.website %}
+                    <div class="detail-item">
+                        <strong>Website:</strong> <a href="{{ profile.website }}" target="_blank" rel="noopener noreferrer">🌐 {{ profile.website }}</a>
+                    </div>
+                {% endif %}
+                
+                {% if profile.birth_date %}
+                    <div class="detail-item">
+                        <strong>Birth Date:</strong> 🎂 {{ profile.birth_date|date:"F j, Y" }}
+                    </div>
+                {% endif %}
+                
+                <div class="detail-item">
+                    <strong>Member Since:</strong> 📅 {{ profile_user.date_joined|date:"F j, Y" }}
+                </div>
+                
+                <div class="detail-item">
+                    <strong>Profile Last Updated:</strong> 🔄 {{ profile.updated|date:"F j, Y \a\t g:i A" }}
+                </div>
+            </div>
+            
+            {% if is_own_profile %}
+                <div class="profile-actions">
+                    <a href="{% url 'edit-profile' %}" class="btn-edit-profile">Edit Profile</a>
+                    <a href="{% url 'delete-profile' %}" class="btn-delete-profile">Delete Account</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="profile-content">
+        <div class="profile-section">
+            <h3>Hosted Rooms ({{ user_rooms|length }})</h3>
+            {% if user_rooms %}
+                {% for room in user_rooms %}
+                    <div class="profile-room-card">
+                        <h4><a href="{% url 'room' room.id %}">{{ room.name }}</a></h4>
+                        <div class="room-topic">{{ room.topic.name }}</div>
+                        <div class="room-updated">Updated {{ room.updated|timesince }} ago</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-content">
+                    No rooms hosted yet.
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="profile-section">
+            <h3>Recent Messages ({{ user_messages|length }})</h3>
+            {% if user_messages %}
+                {% for message in user_messages %}
+                    <div class="profile-message">
+                        <div class="message-content">{{ message.body|truncatewords:20 }}</div>
+                        <div class="message-meta">
+                            in <a href="{% url 'room' message.room.id %}">{{ message.room.name }}</a> • 
+                            {{ message.created|timesince }} ago
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-content">
+                    No messages yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-details {
+    margin-top: 1rem;
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.detail-item {
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.detail-item strong {
+    color: var(--text-primary);
+    display: inline-block;
+    min-width: 120px;
+    margin-right: 1rem;
+}
+
+.detail-item a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.detail-item a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .detail-item strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        min-width: unset;
+    }
+}
+</style>
+{% endblock content %}

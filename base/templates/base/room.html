@@ -1,0 +1,363 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="room-detail">
+    <div class="room-header">
+        <div>
+            <h1>{{ room.name }}</h1>
+            {% if room.topic %}
+                <span class="room-topic">{{ room.topic.name }}</span>
+            {% endif %}
+        </div>
+        
+        {% if request.user == room.host %}
+        <div class="room-actions">
+            <a href="{% url 'update-room' pk=room.id %}" class="btn-edit">Edit Room</a>
+            <a href="{% url 'delete-room' pk=room.id %}" class="btn-delete">Delete Room</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="room-info">
+        <p><strong>Hosted by:</strong> {{ room.host.username }}</p>
+        <p><strong>Created:</strong> {{ room.created|date:"F d, Y" }} ({{ room.created|timesince }} ago)</p>
+        {% if room.description %}
+        <div class="room-description">
+            <h3>About this room:</h3>
+            <p>{{ room.description }}</p>
+        </div>
+        {% endif %}
+        
+        {% if participants %}
+        <div class="room-participants">
+            <h4>Active Participants ({{ participants|length }}):</h4>
+            <div class="participants-list">
+                {% for participant in participants %}
+                    <a href="{% url 'user-profile' participant.username %}" class="participant-badge">
+                        <div class="participant-avatar default-avatar">
+                            {{ participant.first_name.0|default:participant.username.0|upper }}{% if participant.last_name %}{{ participant.last_name.0|upper }}{% endif %}
+                        </div>
+                        {{ participant.get_full_name|default:participant.username }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Enhanced Chat functionality -->
+    <div class="room-chat" id="roomChat">
+        <div class="chat-header">
+            <h3>💬 Live Discussion</h3>
+            <div class="chat-status">
+                <small id="messageCount">{{ room_messages.count }} message{{ room_messages.count|pluralize }}</small>
+                <button id="refreshChat" class="refresh-btn" title="Refresh messages" onclick="refreshMessages()">🔄</button>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            {% for message in room_messages %}
+            <div class="message {% if message.user == request.user %}own-message{% endif %}" data-message-id="{{ message.id }}">
+                <div class="message-avatar">
+                    <div class="avatar-circle">{{ message.user.first_name.0|default:message.user.username.0|upper }}{% if message.user.last_name %}{{ message.user.last_name.0|upper }}{% endif %}</div>
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <strong class="username">{{ message.user.get_full_name|default:message.user.username }}</strong>
+                        {% if message.user == room.host %}
+                            <span class="host-badge">HOST</span>
+                        {% endif %}
+                        <small class="timestamp" title="{{ message.created|date:'F d, Y g:i A' }}">{{ message.created|timesince }} ago</small>
+                        {% if request.user == message.user %}
+                        <a href="{% url 'delete-message' message.id %}" class="delete-message" onclick="return confirm('Are you sure you want to delete this message?')" title="Delete message">×</a>
+                        {% endif %}
+                    </div>
+                    <div class="message-body">
+                        {{ message.body|linebreaksbr }}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-messages" id="noMessages">
+                <div class="welcome-message">
+                    <h4>🎉 Welcome to {{ room.name }}!</h4>
+                    <p>💬 No messages yet. Be the first to start the conversation!</p>
+                    <p>📝 Share your thoughts, ask questions, or discuss the topic: <strong>{{ room.topic.name }}</strong></p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if request.user.is_authenticated %}
+        <form method="POST" class="message-form" id="messageForm" onsubmit="handleMessageSubmit(event)">
+            {% csrf_token %}
+            <div class="message-input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        name="body" 
+                        id="messageInput"
+                        placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)" 
+                        rows="3" 
+                        required
+                        onkeydown="handleKeyDown(event)"
+                        oninput="adjustTextareaHeight(this)"
+                    ></textarea>
+                    <div class="input-controls">
+                        <span class="char-counter" id="charCounter">0/1000</span>
+                        <button type="submit" class="send-btn" id="sendBtn">
+                            <span class="send-icon">📤</span> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <div class="login-prompt">
+            <div class="auth-message">
+                <h4>Join the Conversation</h4>
+                <p>Please <a href="{% url 'login' %}">login</a> or <a href="{% url 'register' %}">create an account</a> to participate in this discussion.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="back-link">
+        <a href="{% url 'home' %}">
+            ← Back to All Rooms
+        </a>
+    </div>
+</div>
+
+<script>
+// Enhanced chat functionality
+let lastMessageCount = {{ room_messages.count }};
+let isRefreshing = false;
+
+function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        document.getElementById('messageForm').submit();
+    }
+}
+
+function adjustTextareaHeight(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    
+    // Update character counter
+    const charCounter = document.getElementById('charCounter');
+    const length = textarea.value.length;
+    charCounter.textContent = `${length}/1000`;
+    
+    if (length > 1000) {
+        charCounter.style.color = '#dc3545';
+        charCounter.textContent = `${length}/1000 - Too long!`;
+    } else if (length > 800) {
+        charCounter.style.color = '#ffc107';
+    } else {
+        charCounter.style.color = '#999';
+    }
+}
+
+function handleMessageSubmit(event) {
+    const textarea = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    if (textarea.value.trim().length === 0) {
+        event.preventDefault();
+        alert('Please enter a message before sending.');
+        return;
+    }
+    
+    if (textarea.value.length > 1000) {
+        event.preventDefault();
+        alert('Message is too long! Please keep it under 1000 characters.');
+        return;
+    }
+    
+    // Disable button to prevent double submission
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="send-icon">⏳</span> Sending...';
+}
+
+function refreshMessages() {
+    if (isRefreshing) return;
+    
+    isRefreshing = true;
+    const refreshBtn = document.getElementById('refreshChat');
+    refreshBtn.style.transform = 'rotate(180deg)';
+    refreshBtn.disabled = true;
+    
+    fetch(`/api/room/{{ room.id }}/messages/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.messages) {
+                updateMessages(data.messages);
+                updateMessageCount(data.count);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching messages:', error);
+            // Fallback to page reload
+            location.reload();
+        })
+        .finally(() => {
+            isRefreshing = false;
+            refreshBtn.style.transform = 'rotate(0deg)';
+            refreshBtn.disabled = false;
+        });
+}
+
+function updateMessages(messages) {
+    const chatMessages = document.getElementById('chatMessages');
+    const noMessages = document.getElementById('noMessages');
+    
+    if (messages.length === 0) {
+        if (noMessages) noMessages.style.display = 'block';
+        return;
+    }
+    
+    if (noMessages) noMessages.style.display = 'none';
+    
+    // Clear existing messages
+    chatMessages.innerHTML = '';
+    
+    messages.forEach(message => {
+        const messageDiv = createMessageElement(message);
+        chatMessages.appendChild(messageDiv);
+    });
+    
+    scrollToBottom();
+}
+
+function createMessageElement(message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${message.is_own_message ? 'own-message' : ''}`;
+    messageDiv.setAttribute('data-message-id', message.id);
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'message-avatar';
+    
+    const avatarCircle = document.createElement('div');
+    avatarCircle.className = 'avatar-circle';
+    avatarCircle.textContent = message.user.charAt(0).toUpperCase();
+    avatarDiv.appendChild(avatarCircle);
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'message-header';
+    
+    const username = document.createElement('strong');
+    username.className = 'username';
+    username.textContent = message.user;
+    headerDiv.appendChild(username);
+    
+    if (message.is_host) {
+        const hostBadge = document.createElement('span');
+        hostBadge.className = 'host-badge';
+        hostBadge.textContent = 'HOST';
+        headerDiv.appendChild(hostBadge);
+    }
+    
+    const timestamp = document.createElement('small');
+    timestamp.className = 'timestamp';
+    const messageDate = new Date(message.created);
+    timestamp.textContent = getRelativeTime(messageDate);
+    timestamp.title = messageDate.toLocaleString();
+    headerDiv.appendChild(timestamp);
+    
+    if (message.is_own_message) {
+        const deleteLink = document.createElement('a');
+        deleteLink.href = `/delete-message/${message.id}`;
+        deleteLink.className = 'delete-message';
+        deleteLink.textContent = '×';
+        deleteLink.title = 'Delete message';
+        deleteLink.onclick = function(e) {
+            return confirm('Are you sure you want to delete this message?');
+        };
+        headerDiv.appendChild(deleteLink);
+    }
+    
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'message-body';
+    bodyDiv.innerHTML = message.body.replace(/\n/g, '<br>');
+    
+    contentDiv.appendChild(headerDiv);
+    contentDiv.appendChild(bodyDiv);
+    
+    messageDiv.appendChild(avatarDiv);
+    messageDiv.appendChild(contentDiv);
+    
+    return messageDiv;
+}
+
+function getRelativeTime(date) {
+    const now = new Date();
+    const diff = now - date;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    return 'Just now';
+}
+
+function updateMessageCount(count) {
+    const messageCountElement = document.getElementById('messageCount');
+    if (messageCountElement) {
+        messageCountElement.textContent = `${count} message${count !== 1 ? 's' : ''}`;
+    }
+    lastMessageCount = count;
+}
+
+// Auto-scroll to bottom of messages
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    scrollToBottom();
+    
+    // Auto-refresh every 10 seconds for new messages
+    setInterval(function() {
+        refreshMessages();
+    }, 10000);
+    
+    // Add typing indicator support
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.addEventListener('input', function() {
+            adjustTextareaHeight(this);
+        });
+        
+        // Initial height adjustment
+        adjustTextareaHeight(messageInput);
+    }
+    
+    // Form submission handling
+    const messageForm = document.getElementById('messageForm');
+    if (messageForm) {
+        messageForm.addEventListener('submit', function(e) {
+            handleMessageSubmit(e);
+        });
+    }
+});
+
+// Handle form submission success
+window.addEventListener('load', function() {
+    // If we just submitted a message, clear the form and scroll to bottom
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput && window.location.hash === '') {
+        messageInput.value = '';
+        adjustTextareaHeight(messageInput);
+        scrollToBottom();
+    }
+});
+</script>
+{% endblock content %}

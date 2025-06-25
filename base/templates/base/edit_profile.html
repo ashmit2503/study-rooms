@@ -1,0 +1,123 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <h1>Edit Profile</h1>
+        <p>Update your personal information and profile details.</p>
+    </div>
+    
+    <form method="post" class="form">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <h3>Personal Information</h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.first_name.id_for_label }}">First Name:</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                        <div class="error-message">{{ form.first_name.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.last_name.id_for_label }}">Last Name:</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                        <div class="error-message">{{ form.last_name.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Email:</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="error-message">{{ form.email.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.birth_date.id_for_label }}">Birth Date:</label>
+                {{ form.birth_date }}
+                {% if form.birth_date.errors %}
+                    <div class="error-message">{{ form.birth_date.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3>Profile Details</h3>
+            
+            <div class="form-group">
+                <label for="{{ form.bio.id_for_label }}">Bio:</label>
+                {{ form.bio }}
+                <small class="form-help">Tell others about yourself, your interests, and what you're studying.</small>
+                {% if form.bio.errors %}
+                    <div class="error-message">{{ form.bio.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.location.id_for_label }}">Location:</label>
+                {{ form.location }}
+                <small class="form-help">Where are you located? (e.g., "New York, USA")</small>
+                {% if form.location.errors %}
+                    <div class="error-message">{{ form.location.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.website.id_for_label }}">Website:</label>
+                {{ form.website }}
+                <small class="form-help">Your personal website, portfolio, or social media profile.</small>
+                {% if form.website.errors %}
+                    <div class="error-message">{{ form.website.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <input type="submit" value="Update Profile" class="btn-edit-profile">
+            <a href="{% url 'user-profile' request.user.username %}" class="btn-cancel">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.form-section h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-help {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock content %}

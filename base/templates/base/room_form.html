@@ -1,0 +1,62 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<div class="form-container">
+    <h2>{% if form.instance.pk %}Update Room{% else %}Create New Room{% endif %}</h2>
+    
+    <form action="" method="POST">
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small style="color: #666; font-size: 0.8rem;">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}
+                    <div class="form-errors">
+                        {% for error in field.errors %}
+                            <small class="error">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <!-- Datalist for topic autocomplete -->
+        <datalist id="topics-list">
+            {% for topic in topics %}
+                <option value="{{ topic.name }}">
+            {% endfor %}
+        </datalist>
+        
+        <input type="submit" value="{% if form.instance.pk %}Update Room{% else %}Create Room{% endif %}" class="btn-submit">
+    </form>
+    
+    <div style="text-align: center; margin-top: 1rem;">
+        <a href="{% url 'home' %}" style="color: #667eea; text-decoration: none;">← Back to Home</a>
+    </div>
+</div>
+
+<style>
+.form-errors {
+    margin-top: 0.5rem;
+}
+
+.form-errors .error {
+    color: #dc3545;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* Style for the autocomplete input */
+input[list] {
+    position: relative;
+}
+
+input[list]::-webkit-calendar-picker-indicator {
+    display: none !important;
+}
+</style>
+{% endblock content %}
